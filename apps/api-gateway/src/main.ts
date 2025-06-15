@@ -3,8 +3,7 @@ import cors from "cors";
 import proxy from "express-http-proxy";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
-import swaggerUi from "swaggaer-ui-express";
-import axios from "axios";
+
 import cookieparser from "cookie-parser";
 import * as path from "path";
 
@@ -12,7 +11,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:8080"],
     allowedHeaders: ["Authorization", "Content-Type"],
     credentials: true,
   })
