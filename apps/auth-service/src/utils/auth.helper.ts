@@ -1,8 +1,9 @@
 import crypto from "crypto";
 import { validationError } from "../../../../packages/error-handler";
-import { NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import redis from "../../../../packages/libs/redis";
 import { sendEmail } from "./sendMail";
+import prisma from "@packages/libs/prisma";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -95,4 +96,57 @@ export const verifyOtp = async (
   }
 
   await redis.del(`otp:${email}`, failedAttemptsKey);
+};
+
+export const handleForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  userType: "user" | "seller"
+) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) throw new validationError("Email is required");
+
+    //Find user/seller in DB
+    const user =
+      userType == "user" &&
+      (await prisma.users.findUnique({ where: { email } }));
+
+    if (!user) throw new validationError(`${userType} not found`);
+
+    //check otp restrictions
+    await checkotpRestictions(email, next);
+    await trackOtpRequests(email, next);
+
+    //generate OTP and send Email
+    await sendOtp(email, user.name, "forgot-password-user-email");
+
+    res
+      .status(200)
+      .json({ message: "OTP send to email , Please verify your account" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyForgotPasswordOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp)
+      throw new validationError("Email and otp are required!");
+    await verifyOtp(email, otp, next);
+
+    res
+      .status(200)
+      .json({ message: "OTP verified. You can now reset your password" });
+  } catch (error) {
+    next(error);
+  }
 };
