@@ -3,7 +3,7 @@ import { validationError } from "../../../../packages/error-handler";
 import { NextFunction, Request, Response } from "express";
 import redis from "../../../../packages/libs/redis";
 import { sendEmail } from "./sendMail";
-import prisma from "@packages/libs/prisma";
+import prisma from "../../../../packages/libs/prisma";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
