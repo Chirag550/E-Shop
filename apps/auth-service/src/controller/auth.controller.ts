@@ -156,8 +156,9 @@ export const resetUserPassword = async (
   next: NextFunction
 ) => {
   try {
-    const { email, newpasssword } = req.body;
-    if (!email || !newpasssword)
+    const { email, newPassword } = req.body;
+    console.log(email, newPassword);
+    if (!email || !newPassword)
       return next(new validationError("Email and new password are required"));
 
     const user = await prisma.users.findUnique({ where: { email } });
@@ -166,7 +167,7 @@ export const resetUserPassword = async (
 
     //compare new password
 
-    const isSamePassword = await bcrypt.compare(newpasssword, user.password!);
+    const isSamePassword = await bcrypt.compare(newPassword, user.password!);
 
     if (isSamePassword)
       return next(
@@ -177,7 +178,7 @@ export const resetUserPassword = async (
 
     //hash the new password
 
-    const hashedPassword = await bcrypt.hash(newpasssword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await prisma.users.update({
       where: { email },
