@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import GoogleButton from "../../shared/Components/google-button";
 import { Eye, EyeOff } from "lucide-react";
 import axios, { AxiosError } from "axios";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 type FormData = {
@@ -18,6 +18,7 @@ const Login = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -35,7 +36,7 @@ const Login = () => {
     },
     onSuccess: (data) => {
       setServerError(null);
-
+      queryClient.invalidateQueries({ queryKey: ["user"] });
       router.push("/");
     },
     onError: (error: AxiosError) => {
