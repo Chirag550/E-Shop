@@ -27,6 +27,13 @@
           "production": {
             "buildTarget": "auth-service:build:production"
           }
+        },
+        "docker-build": {
+          "executor": "@nrwl/workspace:run-commands",
+          "options": {
+            "command": "docker build -t auth-service .",
+            "cwd": "apps/auth-service"
+          }
         }
       },
       "test": {
