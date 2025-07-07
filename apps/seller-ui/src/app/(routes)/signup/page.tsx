@@ -16,7 +16,7 @@ const Signup = () => {
   const [timer, setTimer] = useState(60);
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [sellerData, setSellerData] = useState<FormData | null>(null);
-
+  const [sellerId, setSellerId] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const {
@@ -68,6 +68,7 @@ const Signup = () => {
       return response.data;
     },
     onSuccess: (data) => {
+      setSellerId(data?.seller?.id);
       setActiveStep(2);
     },
   });

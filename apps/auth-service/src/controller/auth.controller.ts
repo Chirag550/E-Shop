@@ -13,8 +13,12 @@ import { AuthError, validationError } from "../../../../packages/error-handler";
 import bcrypt from "bcryptjs";
 import jwt, { JsonWebTokenError } from "jsonwebtoken";
 import { setCookie } from "../utils/cookies/setCookie";
-import { PassThrough } from "stream";
 
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-06-30.basil",
+});
 //Register a new user
 export const userRegisteration = async (
   req: Request,
@@ -323,5 +327,173 @@ export const verifySeller = async (
       .json({ seller, message: "Seller registered successfully!" });
   } catch (error) {
     next(error);
+  }
+};
+
+//Login-seller
+
+export const loginseller = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return next(new validationError("Email and password are required!"));
+    }
+
+    const seller = await prisma.sellers.findUnique({ where: { email } });
+
+    if (!seller) {
+      return next(new validationError("invalid email and password"));
+    }
+
+    const isMatch = await bcrypt.compare(password, seller.password);
+
+    if (!isMatch) {
+      return next(new validationError("Invalid email and password!"));
+    }
+
+    res.clearCookie("access_token");
+    res.clearCookie("refresh_token");
+
+    //generate access and referesh tokens
+
+    const accessToken = jwt.sign(
+      { id: seller.id, role: "seller" },
+      process.env.ACCESS_TOKEN_SECRET as string,
+      { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: seller.id, role: "seller" },
+      process.env.REFRESH_TOKEN as string,
+      { expiresIn: "7d" }
+    );
+
+    //store it in cookies
+    setCookie(res, "seller-refresh-token", refreshToken);
+    setCookie(res, "seller-access-token", accessToken);
+
+    res.status(200).json({
+      message: "Login sucessfull",
+      seller: { id: seller.id, email: seller.email, name: seller.name },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+//create shop by seller
+export const createShop = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { name, bio, address, opening_hours, website, category, sellerId } =
+      req.body;
+
+    if (
+      !name ||
+      !bio ||
+      !address ||
+      !opening_hours ||
+      !website ||
+      !category ||
+      !sellerId
+    ) {
+      return next(new validationError("All fields are required!"));
+    }
+
+    const shopData: any = {
+      name,
+      bio,
+      address,
+      opening_hours,
+      category,
+      sellerId,
+    };
+
+    if (website && website.trim() !== "") {
+      shopData.website = website;
+    }
+    const shop = await prisma.shops.create({ data: shopData });
+
+    res.status(201).json({ success: true, shop });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// get logged in seller
+export const getSeller = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const seller = req.seller;
+
+    res.status(201).json({
+      success: true,
+      seller,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// create stripe connect account link
+export const createStripeConnectLink = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { sellerId } = req.body;
+
+    if (!sellerId) return next(new validationError("Seller ID is required!"));
+
+    const seller = await prisma.sellers.findUnique({
+      where: {
+        id: sellerId,
+      },
+    });
+
+    if (!seller) {
+      return next(new validationError("Seller is not available with this id!"));
+    }
+
+    const account = await stripe.accounts.create({
+      type: "express",
+      email: seller?.email,
+      country: "GB",
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+    });
+
+    await prisma.sellers.update({
+      where: {
+        id: sellerId,
+      },
+      data: {
+        stripeId: account.id,
+      },
+    });
+
+    const accountLink = await stripe.accountLinks.create({
+      account: account.id,
+      refresh_url: `http://localhost:3000/success`,
+      return_url: `http://localhost:3000/success`,
+      type: "account_onboarding",
+    });
+
+    res.json({ url: accountLink.url });
+  } catch (error) {
+    return next(error);
   }
 };
