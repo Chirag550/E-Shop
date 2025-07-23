@@ -467,13 +467,10 @@ export const createStripeConnectLink = async (
     }
 
     const account = await stripe.accounts.create({
-      type: "express",
+      type: "standard",
       email: seller?.email,
-      country: "GB",
-      capabilities: {
-        card_payments: { requested: true },
-        transfers: { requested: true },
-      },
+      country: "IN",
+     
     });
 
     await prisma.sellers.update({

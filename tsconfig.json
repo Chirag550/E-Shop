@@ -16,9 +16,6 @@
       "path": "./apps/user-ui"
     },
     {
-      "path": "./seller-ui"
-    },
-    {
       "path": "./apps/seller-ui"
     }
   ]

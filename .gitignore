@@ -9,8 +9,8 @@ out-tsc
 node_modules
 
 .env
-C:\Users\Chira\OneDrive\Desktop\E-Shop\apps\user-ui\.env
-C:\Users\Chira\OneDrive\Desktop\E-Shop\apps\seller-ui\.env
+C:\Users\shilp\OneDrive\Desktop\E-Shop\apps\user-ui\.env
+C:\Users\shilp\OneDrive\Desktop\E-Shop\apps\seller-ui\.env
 
 # IDEs and editors
 /.idea
