@@ -453,6 +453,7 @@ export const createStripeConnectLink = async (
 ) => {
   try {
     const { sellerId } = req.body;
+    console.log(sellerId); //testing for git
 
     if (!sellerId) return next(new validationError("Seller ID is required!"));
 
