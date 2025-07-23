@@ -8,6 +8,8 @@ out-tsc
 # dependencies
 node_modules
 
+.Desktop
+
 .env
 C:\Users\shilp\OneDrive\Desktop\E-Shop\apps\user-ui\.env
 C:\Users\shilp\OneDrive\Desktop\E-Shop\apps\seller-ui\.env

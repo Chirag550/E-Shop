@@ -470,7 +470,7 @@ export const createStripeConnectLink = async (
       type: "standard",
       email: seller?.email,
       country: "IN",
-     
+    
     });
 
     await prisma.sellers.update({
