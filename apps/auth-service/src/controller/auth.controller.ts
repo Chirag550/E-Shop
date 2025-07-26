@@ -145,7 +145,10 @@ export const refreshToken = async (
 ) => {
   try {
     const refreshToken =
-      req.cookies["refresh_token"] || req.headers.authorization?.split(" ")[1];
+      req.cookies["refresh_token"] ||
+      req.cookies["seller-refresh-token"] ||
+      req.headers.authorization?.split(" ")[1];
+
 
     if (!refreshToken) {
       return next(new validationError("Unauthorized! No refresh token."));
@@ -153,27 +156,41 @@ export const refreshToken = async (
 
     const decoded = jwt.verify(
       refreshToken,
-      process.env.REFRESH_TOKEN_SECRET as string
+      process.env.REFRESH_TOKEN_JWT_SECRET as string
     ) as { id: string; role: string };
 
     if (!decoded || !decoded.id || !decoded.role) {
       return next(new JsonWebTokenError("Forbidden! Invalid refresh token."));
     }
 
-    const user = await prisma.users.findUnique({ where: { id: decoded.id } });
+       let account;
+    if (decoded.role === "user" || decoded.role === "admin") {
+      account = await prisma.users.findUnique({ where: { id: decoded.id } });
+    } else if (decoded.role === "seller") {
+      account = await prisma.sellers.findUnique({
+        where: { id: decoded.id },
+        include: { shop: true },
+      });
+    }
 
-    if (!user) {
+    if (!account) {
       return next(new AuthError("Forbidden! User/Seller not found"));
     }
 
+
     const newAccessToken = jwt.sign(
       { id: decoded.id, role: decoded.role },
-      process.env.ACCESS_TOKEN_SECRET as string,
+      process.env.ACCESS_TOKEN_JWT_SECRET as string,
       { expiresIn: "15m" }
     );
 
-    setCookie(res, "access_token", newAccessToken);
+     if (decoded.role === "user" || decoded.role === "admin") {
+      setCookie(res, "access_token", newAccessToken);
+    } else if (decoded.role === "seller") {
+      setCookie(res, "seller-access-token", newAccessToken);
+    }
 
+    req.role = decoded.role;
     return res.status(201).json({ success: true });
   } catch (error) {
     next(error);
@@ -363,13 +380,13 @@ export const loginseller = async (
 
     const accessToken = jwt.sign(
       { id: seller.id, role: "seller" },
-      process.env.ACCESS_TOKEN_SECRET as string,
+      process.env.ACCESS_TOKEN_JWT_SECRET as string,
       { expiresIn: "15m" }
     );
 
     const refreshToken = jwt.sign(
       { id: seller.id, role: "seller" },
-      process.env.REFRESH_TOKEN as string,
+      process.env.REFRESH_TOKEN_JWT_SECRET as string,
       { expiresIn: "7d" }
     );
 
@@ -453,7 +470,7 @@ export const createStripeConnectLink = async (
 ) => {
   try {
     const { sellerId } = req.body;
-    console.log(sellerId); //testing for git
+    console.log(sellerId); //testing for gitgit
 
     if (!sellerId) return next(new validationError("Seller ID is required!"));
 

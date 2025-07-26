@@ -42,7 +42,7 @@ const isAuthenticated = async (req: any, res: Response, next: NextFunction) => {
       return res.status(401).json({ message: "Account not found!" });
     }
     console.log(account);
-    req.user = account;
+    req.role = decoded.role;
     return next();
   } catch (error) {
     console.error("Auth error:", error);
