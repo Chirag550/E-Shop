@@ -89,5 +89,6 @@
         "linter": "none"
       }
     }
-  }
+  },
+  "npmScope": "@./"
 }

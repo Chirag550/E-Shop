@@ -2,12 +2,14 @@
 import ImagePlaceHolder from 'apps/seller-ui/src/shared/components/image-placeholder'
 
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react'
-import { useForm } from 'react-hook-form';
+import React, { useMemo, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form';
 import Input from "../../../../../../../packages/components/input/index"
 import ColorSelector from 'packages/components/color-selector/index';
 import CustomSpecifications from 'packages/components/custom-specifications';
 import CustomProperties from 'packages/components/custom-properties';
+import axiosInstance from 'apps/seller-ui/src/utils/axiosInstance';
+import { useQuery } from '@tanstack/react-query';
 
 
 const page = () => {
@@ -31,6 +33,31 @@ const page = () => {
 
   const router = useRouter();
 
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      try {
+        const res = await axiosInstance.get(
+          "/product/api/get-categories"
+         
+        );
+        return res.data;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
+  });
+const categories = data?.categories || [];
+  const subCategoriesData = data?.subCategories || {};
+
+    const selectedCategory = watch("category");
+
+
+  const subcategories = useMemo(() => {
+    return selectedCategory ? subCategoriesData[selectedCategory] || [] : [];
+  }, [selectedCategory, subCategoriesData]);
 
   const handleImageChange = async (file: File | null, index: number) => {
     if (!file) return;
@@ -233,8 +260,108 @@ const page = () => {
                            <div className="mt-2">
                 <CustomProperties control={control} errors={errors} />
               </div>
+               <div className="mt-2">
+                <label className="block font-semibold text-gray-300 mb-1">
+                  Cash On Delivery *
+                </label>
+                <select
+                  {...register("cash_on_delivery", {
+                    required: "Cash on Delivery is required",
+                  })}
+                  defaultValue="yes"
+                  className="w-full border outline-none border-gray-700 bg-transparent p-2 rounded-md text-white"
+                >
+                  <option value="yes" className="bg-black">
+                    Yes
+                  </option>
+                  <option value="no" className="bg-black">
+                    No
+                  </option>
+                </select>
+                {errors.cash_on_delivery && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.cash_on_delivery.message as string}
+                  </p>
+                )}
+              </div>
 
             </div>
+             <div className="w-2/4">
+               <label className="block font-semibold text-gray-300 mb-1">
+                Category *
+              </label>
+              {isLoading ? (
+                <p className="text-gray-400">Loading categories...</p>
+              ) : isError ? (
+                <p className="text-red-500">Failed to load categories</p>
+              ) : (
+                <Controller
+                  name="category"
+                  control={control}
+                  rules={{ required: "Category is required" }}
+                  render={({ field }) => (
+                    <select
+                      {...field}
+                      className="w-full border outline-none border-gray-700 bg-transparent p-2 rounded-md text-white"
+                    >
+                      <option value="" className="bg-black">
+                        Select Category
+                      </option>
+                      {categories?.map((category: string) => (
+                        <option
+                          value={category}
+                          key={category}
+                          className="bg-black"
+                        >
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
+              )}
+              {errors.category && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.category.message as string}
+                </p>
+              )}
+
+              <div className="mt-2">
+                <label className="block font-semibold text-gray-300 mb-1">
+                  Subcategory *
+                </label>
+                <Controller
+                  name="subCategory"
+                  control={control}
+                  rules={{ required: "Subcategory is required" }}
+                  render={({ field }) => (
+                    <select
+                      {...field}
+                      className="w-full border outline-none border-gray-700 bg-transparent p-2 rounded-md text-white"
+                    >
+                      <option value="" className="bg-black">
+                        Select Subcategory
+                      </option>
+                      {subcategories?.map((subcategory: string) => (
+                        <option
+                          key={subcategory}
+                          value={subcategory}
+                          className="bg-black"
+                        >
+                          {subcategory}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
+                {errors.subcategory && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.subcategory.message as string}
+                  </p>
+                )}
+              </div>
+             </div>
+
 
           </div>
         </div>
