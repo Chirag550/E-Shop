@@ -11,7 +11,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           <SidebarWrapper/>
         </div>
       </aside>
-
+ 
       {/* Main content area */}
       <main className="flex-1 h-screen overflow-y-auto">
         <div className="p-4">{children}</div>

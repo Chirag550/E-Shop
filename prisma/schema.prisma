@@ -85,3 +85,14 @@ model site_config {
   logo          String?
   banner        String?
 }
+
+model discount_codes{
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  public_name String
+  discountType String
+  discountValue Float 
+  discountCode  String @unique
+  sellerId String @db.ObjectId
+  createAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
